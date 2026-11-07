@@ -10,7 +10,9 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     pass
-class UserResponse(BaseModel):
+
+
+class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
     id:int
@@ -23,7 +25,7 @@ class UserResponse(BaseModel):
 class PostBase(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     content: str =  Field(min_length=1)
-    author: str = Field(min_length=1, max_length=50)
+     
 
 class PostCreate(PostBase):
     user_id: int #Temporary
