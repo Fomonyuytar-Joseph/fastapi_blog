@@ -4,6 +4,8 @@
 ### dotenv ###
 .env
 
+.vscode
+
 ### User Uploaded Media Files ###
 media/
 
