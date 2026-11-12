@@ -16,7 +16,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import models
 from database import Base, engine, get_db
-
 from routers import posts, users
 
 
@@ -45,7 +44,9 @@ app.include_router(posts.router, prefix="/api/posts", tags=["posts"])
 @app.get("/posts", include_in_schema=False, name="posts")
 async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
     result = await db.execute(
-        select(models.Post).options(selectinload(models.Post.author)).order_by(models.Post.date_posted.desc())
+        select(models.Post)
+        .options(selectinload(models.Post.author))
+        .order_by(models.Post.date_posted.desc())
     )
     posts = result.scalars().all()
     return templates.TemplateResponse(
@@ -72,8 +73,7 @@ async def post_page(
             "post.html",
             {"post": post, "title": title},
         )
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Post not found")
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
 
 @app.get("/users/{user_id}/posts", include_in_schema=False, name="user_posts")

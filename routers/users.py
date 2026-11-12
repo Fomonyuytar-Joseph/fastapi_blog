@@ -1,14 +1,29 @@
+from datetime import timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import models
+from auth import (
+    create_access_token,
+    hash_password,
+    oauth2_scheme,
+    verify_access_token,
+    verify_password,
+)
+from config import settings
 from database import get_db
-from schemas import PostResponse, UserCreate, UserResponse, UserUpdate
-
+from schemas import (
+    PostResponse,
+    UserCreate,
+    UserPrivateResponse,
+    UserPublicResponse,
+    UserUpdate,
+)
 
 router = APIRouter()
 
@@ -18,7 +33,7 @@ router = APIRouter()
 
 @router.post(
     "",
-    response_model=UserResponse,
+    response_model=UserPrivateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_db)]):
@@ -58,8 +73,7 @@ async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
     user = result.scalars().first()
     if user:
         return user
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                        detail="User not found")
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 
 @router.get("/{user_id}/posts", response_model=list[PostResponse])
@@ -74,7 +88,8 @@ async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_d
     result = await db.execute(
         select(models.Post)
         .options(selectinload(models.Post.author))
-        .where(models.Post.user_id == user_id).order_by(models.Post.date_posted.desc()),
+        .where(models.Post.user_id == user_id)
+        .order_by(models.Post.date_posted.desc()),
     )
     posts = result.scalars().all()
     return posts
@@ -95,8 +110,7 @@ async def update_user(
         )
     if user_update.username is not None and user_update.username != user.username:
         result = await db.execute(
-            select(models.User).where(
-                models.User.username == user_update.username),
+            select(models.User).where(models.User.username == user_update.username),
         )
         existing_user = result.scalars().first()
         if existing_user:
