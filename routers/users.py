@@ -12,8 +12,6 @@ from auth import (
     CurrentUser,
     create_access_token,
     hash_password,
-    oauth2_scheme,
-    verify_access_token,
     verify_password,
 )
 from config import settings
@@ -30,9 +28,6 @@ from schemas import (
 router = APIRouter()
 
 
-# =========================== USERS API =========================
-
-
 @router.post(
     "",
     response_model=UserPrivateResponse,
@@ -41,7 +36,7 @@ router = APIRouter()
 async def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_db)]):
     result = await db.execute(
         select(models.User).where(
-            func.lower(models.User.username) == user.username.lower()
+            func.lower(models.User.username) == user.username.lower(),
         ),
     )
     existing_user = result.scalars().first()
@@ -162,8 +157,8 @@ async def update_user(
         and user_update.username.lower() != user.username.lower()
     ):
         result = await db.execute(
-            select(func.lower(models.User)).where(
-                models.User.username.lower() == user_update.username.lower()
+            select(models.User).where(
+                func.lower(models.User.username) == user_update.username.lower(),
             ),
         )
         existing_user = result.scalars().first()
@@ -178,7 +173,7 @@ async def update_user(
     ):
         result = await db.execute(
             select(models.User).where(
-                func.lower(models.User.email) == user_update.email.lower()
+                func.lower(models.User.email) == user_update.email.lower(),
             ),
         )
         existing_email = result.scalars().first()
@@ -207,10 +202,11 @@ async def delete_user(
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     if user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to delete this user",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this user",
+        )
+
     result = await db.execute(select(models.User).where(models.User.id == user_id))
     user = result.scalars().first()
     if not user:
