@@ -3,7 +3,7 @@ let fetchPromise = null;
 
 export async function getCurrentUser() {
   if (currentUser) {
-    return currentUser;
+    return currentUser 
   }
 
   // Return in-progress fetch to prevent duplicate API calls

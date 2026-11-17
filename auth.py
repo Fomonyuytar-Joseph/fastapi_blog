@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta , timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import jwt
@@ -57,6 +57,7 @@ def verify_access_token(token: str) -> str | None:
     else:
         return payload.get("sub")
 
+
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -89,5 +90,6 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
 
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
