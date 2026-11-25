@@ -6,7 +6,7 @@ import httpx
 from sqlalchemy import delete, select, update
 
 import models
-from database import AsyncSessionLocal, engine
+from database import AsyncSessionLocal, Base, engine
 from image_utils import PROFILE_PICS_DIR
 from main import app
 
@@ -241,8 +241,13 @@ async def clear_existing_data() -> None:
                 file.unlink()
         print(f"Deleted profile pictures from {PROFILE_PICS_DIR}")
 
+    # Make sure all tables exist (adds any missing ones, e.g. password_reset_tokens)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     # Clear database tables (order respects foreign keys)
     async with AsyncSessionLocal() as db:
+        await db.execute(delete(models.PasswordResetToken))
         await db.execute(delete(models.Post))
         await db.execute(delete(models.User))
         await db.commit()
